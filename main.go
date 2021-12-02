@@ -1,13 +1,21 @@
 package main
 
-import "github.com/gofiber/fiber/v2"
+import (
+	"os"
+	"portfolio-backend/routes"
+
+	"github.com/gin-gonic/gin"
+)
 
 func main() {
-    app := fiber.New()
+    port := os.Getenv("PORT")
 
-    app.Get("/", func(c *fiber.Ctx) error {
-        return c.SendString("Hello, World 👋!")
-    })
+    if port == "" {
+        port = "8000"
+    }
 
-    app.Listen(":8080")
+    router := gin.New()
+    router.Use(gin.Logger())
+    routes.UserRoutes(router)
+    router.Run(":" + port)
 }
