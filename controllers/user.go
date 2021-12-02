@@ -98,7 +98,7 @@ func SignUp() gin.HandlerFunc {
 
 			token, refreshToken, _ := utils.GenerateAllTokens(*user.Name, *user.Fullname, *user.Username, user.UserID)
 			user.Token = &token
-			user.Refresh_token = &refreshToken
+			user.RefreshToken = &refreshToken
 
 			resultInsertionNumber, insertErr := userCollection.InsertOne(ctx, user)
 			if insertErr != nil {
