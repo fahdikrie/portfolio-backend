@@ -15,4 +15,4 @@
 # vendor/
 
 # Environment files
-.env
+.env.DS_Store

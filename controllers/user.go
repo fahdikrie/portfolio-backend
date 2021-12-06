@@ -22,32 +22,32 @@ var userCollection *mongo.Collection = database.ConnectCollection(database.Clien
 var validate = validator.New()
 
 func Login() gin.HandlerFunc {
-	return func(c *gin.Context) {
+	return func(ginCtx *gin.Context) {
 		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 		var user models.User
 		var foundUser models.User
 
-		if err := c.BindJSON(&user); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		if err := ginCtx.BindJSON(&user); err != nil {
+			ginCtx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 
 		err := userCollection.FindOne(ctx, bson.M{"username": user.Username}).Decode(&foundUser)
 		defer cancel()
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Wrong Password!"})
+			ginCtx.JSON(http.StatusInternalServerError, gin.H{"error": "Wrong Password!"})
 			return
 		}
 
 		passwordIsValid, msg := utils.VerifyPassword(*user.Password, *foundUser.Password)
 		defer cancel()
 		if passwordIsValid != true {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": msg})
+			ginCtx.JSON(http.StatusInternalServerError, gin.H{"error": msg})
 			return
 		}
 
 		if foundUser.Username == nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "user not found"})
+			ginCtx.JSON(http.StatusInternalServerError, gin.H{"error": "user not found"})
 			return
 		}
 		token, refreshToken, _ := utils.GenerateAllTokens(*foundUser.Name, *foundUser.Fullname, *foundUser.Username, *&foundUser.UserID)
@@ -56,11 +56,11 @@ func Login() gin.HandlerFunc {
 		err = userCollection.FindOne(ctx, bson.M{"user_id": foundUser.UserID}).Decode(&foundUser)
 
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			ginCtx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
 
-		c.JSON(http.StatusOK, foundUser)
+		ginCtx.JSON(http.StatusOK, foundUser)
 	}
 }
 
@@ -115,3 +115,34 @@ func SignUp() gin.HandlerFunc {
 	}
 }
 
+func ChangePassword() gin.HandlerFunc {
+	return func(ginCtx *gin.Context) {
+		var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+		var user models.User
+		var foundUser models.User
+
+		if err := ginCtx.BindJSON(&user); err != nil {
+			ginCtx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		err := userCollection.FindOne(ctx, bson.M{"username": user.Username}).Decode(&foundUser)
+		defer cancel()
+		if err != nil {
+			ginCtx.JSON(http.StatusInternalServerError, gin.H{"error": "Incorrect Old Password!"})
+			return
+		}
+
+		passwordIsValid, msg := utils.VerifyPassword(*user.Password, *foundUser.Password)
+		defer cancel()
+		if passwordIsValid != true {
+			ginCtx.JSON(http.StatusInternalServerError, gin.H{"error": msg})
+			return
+		}
+
+		if foundUser.Username == nil {
+			ginCtx.JSON(http.StatusInternalServerError, gin.H{"error": "user not found"})
+			return
+		}
+	}
+}
